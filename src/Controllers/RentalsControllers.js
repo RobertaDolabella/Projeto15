@@ -97,18 +97,20 @@ console.log("o jogo existe")
 }
 
 export async function DevolverRentals(req,res){
+
+
  
     const { id } = req.params;
 
-    const dataRetorno = dayjs().format('DD')
-   
+    const dataRetorno = dayjs().format('YYYY-MM-DD')
+    const datavolta = dayjs(dataRetorno)
+
+
 
 try{
 
     const {rows :jogoDevolvido} = await connection.query('SELECT "rentDate", "daysRented" , "originalPrice", "returnDate" FROM rentals WHERE id=$1',[id])
 
-
-    console.log(jogoDevolvido)
 if(jogoDevolvido.length<1){
     return res.sendStatus(404)
 }
@@ -117,21 +119,20 @@ if(jogoDevolvido[0].returnDate!==null){
     return res.sendStatus(400)
 }
 
-const dataAluguel = dayjs(jogoDevolvido[0].rentDate).format('DD')
+const dataAlugado = dayjs(jogoDevolvido[0].rentDate).format('YYYY-MM-DD')
 
-const diasFora = dataRetorno-dataAluguel
+const date2 = dayjs(`${dataAlugado}`)
+const date1 = dayjs(`${datavolta}`)
+const tempo = date1.diff(date2,'day')
+console.log(tempo)
 
-const diasDeMulta = diasFora - jogoDevolvido[0].daysRented
+let multa = 0
 
-const multa = 0
-
-console.log(diasDeMulta)
-
-if(diasDeMulta>0){
-    console.log("1")
-   multa = diasDeMulta*jogoDevolvido[0].originalPrice/jogoDevolvido[0].daysRented
+if(tempo>0){
+console.log("entrou na multa")
+   multa = tempo*(jogoDevolvido[0].originalPrice)
 }
-console.log("2")
+
 await connection.query('UPDATE rentals SET "returnDate"=$1, "delayFee" = $2 WHERE id=$3',[dayjs().format('YYYY-MM-DD'), multa, id])
 
 res.sendStatus(200)
